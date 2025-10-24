@@ -1,5 +1,5 @@
 ## Клонируйте репозиторий: 
-    git clone https://github.com/VADG3RN/Project_Aminov_3 
+    git clone https://github.com/VADG3RN/Project_Aminov_4 
 
 ## Создайте виртуальное окружение: 
     python -m venv venv 
@@ -17,4 +17,4 @@
     python manage.py runserver
 
 ## Откройте в браузере: 
-    http://127.0.0.1:8000/myapp3/add/
+    http://127.0.0.1:8000/myapp4/add/
