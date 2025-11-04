@@ -1,21 +1,184 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"><title>books.json</title></head>
-<body>
-<h1>Содержимое «books.json»</h1>
-{% if not books %}
-  <p>Нет записей.</p>
-{% endif %}
-<ul>
-  {% for b in books %}
-    <li>
-      {% for key, value in b.items %}
-        <strong>{{ key|capfirst }}:</strong> {{ value }}<br>
-      {% endfor %}
-    </li>
-  {% endfor %}
-</ul>
-<p><a href="{% url 'books:book_form' %}">Добавить ещё</a></p>
-<p><a href="{% url 'books:list_files' %}">Список файлов</a></p>
+<head>
+  <meta charset="utf-8">
+  <title>Книги</title>
+  <!-- Bootstrap CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container py-4">
+  <h1>Список книг</h1>
+
+  <div class="mb-3">
+    <label class="form-label">Источник:</label>
+    <div>
+      <a class="btn btn-outline-primary {% if source=='file' %}active{% endif %}" href="?source=file">Файлы JSON</a>
+      <a class="btn btn-outline-primary {% if source=='db' %}active{% endif %}" href="?source=db">База данных (SQLite)</a>
+    </div>
+  </div>
+
+  {% if source == 'db' %}
+    <!-- поиск и таблица с AJAX -->
+    <div class="mb-3">
+      <input id="searchInput" placeholder="Поиск (author, title, genre)" class="form-control" />
+    </div>
+
+    <table class="table table-striped" id="booksTable">
+      <thead><tr><th>Автор</th><th>Название</th><th>Стр.</th><th>Год</th><th>Жанр</th><th>Действия</th></tr></thead>
+      <tbody id="booksBody">
+        {% for b in books %}
+        <tr data-id="{{ b.id }}">
+          <td class="author">{{ b.author }}</td>
+          <td class="title">{{ b.title }}</td>
+          <td class="pages">{{ b.pages }}</td>
+          <td class="year">{{ b.year }}</td>
+          <td class="genre">{{ b.genre }}</td>
+          <td>
+            <button class="btn btn-sm btn-warning btn-edit">Редактировать</button>
+            <button class="btn btn-sm btn-danger btn-delete">Удалить</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% else %}
+    <!-- вывод из файла -->
+    {% if not books %}
+      <p>Нет записей.</p>
+    {% else %}
+      <ul class="list-group">
+        {% for b in books %}
+        <li class="list-group-item">
+          <strong>{{ b.author }}</strong> — {{ b.title }} ({{ b.year }}) — {{ b.pages }} стр.
+        </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endif %}
+
+  <!-- Modal для редактирования (Bootstrap 5) -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editForm">
+          <div class="modal-header"><h5 class="modal-title">Редактировать книгу</h5></div>
+          <div class="modal-body">
+            <input type="hidden" id="editId" />
+            <div class="mb-2"><label>Автор</label><input id="editAuthor" class="form-control" /></div>
+            <div class="mb-2"><label>Название</label><input id="editTitle" class="form-control" /></div>
+            <div class="mb-2"><label>Страниц</label><input id="editPages" type="number" class="form-control" /></div>
+            <div class="mb-2"><label>Год</label><input id="editYear" type="number" class="form-control" /></div>
+            <div class="mb-2"><label>Жанр</label><input id="editGenre" class="form-control" /></div>
+            <div id="editError" class="text-danger"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<!-- Bootstrap JS + tiny JS for AJAX actions -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const csrftoken = '{{ csrf_token }}'; // если нужен
+function getCookie(name) {
+  // можно взять CSRF из cookie, но в шаблоне проще вставить token
+}
+// AJAX поиск
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value;
+    fetch("{% url 'books:api_search_books' %}?q=" + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('booksBody');
+        tbody.innerHTML = '';
+        data.results.forEach(b => {
+          const tr = document.createElement('tr');
+          tr.setAttribute('data-id', b.id);
+          tr.innerHTML = `<td class="author">${b.author}</td>
+            <td class="title">${b.title}</td>
+            <td class="pages">${b.pages}</td>
+            <td class="year">${b.year}</td>
+            <td class="genre">${b.genre}</td>
+            <td>
+              <button class="btn btn-sm btn-warning btn-edit">Редактировать</button>
+              <button class="btn btn-sm btn-danger btn-delete">Удалить</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      });
+  });
+}
+
+// Делегирование событий: редактирование/удаление
+document.addEventListener('click', function(e) {
+  if (e.target.matches('.btn-delete')) {
+    const tr = e.target.closest('tr');
+    const id = tr.getAttribute('data-id');
+    if (!confirm('Удалить запись?')) return;
+    fetch("{% url 'books:api_delete_book' 0 %}".replace('/0/', '/' + id + '/'), {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrftoken}
+    }).then(r => r.json())
+      .then(resp => {
+        if (resp.status === 'ok') {
+          tr.remove();
+        } else {
+          alert('Ошибка: ' + (resp.error || 'unknown'));
+        }
+      });
+  }
+
+  if (e.target.matches('.btn-edit')) {
+    const tr = e.target.closest('tr');
+    const id = tr.getAttribute('data-id');
+    document.getElementById('editId').value = id;
+    document.getElementById('editAuthor').value = tr.querySelector('.author').innerText;
+    document.getElementById('editTitle').value = tr.querySelector('.title').innerText;
+    document.getElementById('editPages').value = tr.querySelector('.pages').innerText;
+    document.getElementById('editYear').value = tr.querySelector('.year').innerText;
+    document.getElementById('editGenre').value = tr.querySelector('.genre').innerText;
+    const modal = new bootstrap.Modal(document.getElementById('editModal'));
+    modal.show();
+  }
+});
+
+document.getElementById('editForm')?.addEventListener('submit', function(ev) {
+  ev.preventDefault();
+  const id = document.getElementById('editId').value;
+  const payload = {
+    author: document.getElementById('editAuthor').value,
+    title: document.getElementById('editTitle').value,
+    pages: document.getElementById('editPages').value,
+    year: document.getElementById('editYear').value,
+    genre: document.getElementById('editGenre').value
+  };
+  fetch("{% url 'books:api_update_book' 0 %}".replace('/0/', '/' + id + '/'), {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken},
+    body: JSON.stringify(payload)
+  }).then(r => r.json())
+    .then(resp => {
+      if (resp.status === 'ok') {
+        // обновляем строку в таблице
+        const tr = document.querySelector('tr[data-id="' + id + '"]');
+        tr.querySelector('.author').innerText = payload.author;
+        tr.querySelector('.title').innerText = payload.title;
+        tr.querySelector('.pages').innerText = payload.pages;
+        tr.querySelector('.year').innerText = payload.year;
+        tr.querySelector('.genre').innerText = payload.genre;
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+      } else {
+        document.getElementById('editError').innerText = resp.error || 'Ошибка';
+      }
+    });
+});
+</script>
 </body>
 </html>
