@@ -1,8 +1,6 @@
+import datetime
 from django import forms
 from .utils import BOOK_FIELDS
-import datetime
-from .models import Book
-
 CURRENT_YEAR = datetime.date.today().year
 
 def create_dynamic_book_form():
@@ -10,20 +8,23 @@ def create_dynamic_book_form():
     for f in BOOK_FIELDS:
         name = f["name"]
         label = f["label"]
+        required = f.get('required', True)
         if name == "pages":
-            field = forms.IntegerField(label=label, min_value=1)
+            field = forms.IntegerField(label=label, min_value=1, required=required)
         elif name == "year":
-            field = forms.IntegerField(label=label, min_value=1, max_value=CURRENT_YEAR)
+            field = forms.IntegerField(label=label, min_value=1, max_value=CURRENT_YEAR, required=required)
         else:
-            field = forms.CharField(label=label, max_length=200, required=(f.get('required', True)))
+            field = forms.CharField(label=label, max_length=200, required=required)
         fields[name] = field
-    # поле выбора куда сохранять
+
+    # Добавляем radio выбор куда сохранять
     fields['save_to'] = forms.ChoiceField(
         choices=(('file', 'Файл (JSON)'), ('db', 'База данных (SQLite)')),
         widget=forms.RadioSelect,
         initial='file',
-        label='Сохранить в'
+        label='Куда сохранить'
     )
+
     return type("BookForm", (forms.Form,), fields)
 
 BookForm = create_dynamic_book_form()

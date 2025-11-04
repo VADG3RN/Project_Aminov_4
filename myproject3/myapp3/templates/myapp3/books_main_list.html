@@ -1,9 +1,9 @@
+{% load static %}
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Книги</title>
-  <!-- Bootstrap CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container py-4">
@@ -12,19 +12,18 @@
   <div class="mb-3">
     <label class="form-label">Источник:</label>
     <div>
-      <a class="btn btn-outline-primary {% if source=='file' %}active{% endif %}" href="?source=file">Файлы JSON</a>
-      <a class="btn btn-outline-primary {% if source=='db' %}active{% endif %}" href="?source=db">База данных (SQLite)</a>
+      <a class="btn btn-outline-primary {% if source == 'file' %}active{% endif %}" href="?source=file">Файлы JSON</a>
+      <a class="btn btn-outline-primary {% if source == 'db' %}active{% endif %}" href="?source=db">База данных (SQLite)</a>
     </div>
   </div>
 
   {% if source == 'db' %}
-    <!-- поиск и таблица с AJAX -->
     <div class="mb-3">
-      <input id="searchInput" placeholder="Поиск (author, title)" class="form-control" />
+      <input id="searchInput" placeholder="Поиск (author, title, genre)" class="form-control" />
     </div>
 
     <table class="table table-striped" id="booksTable">
-      <thead><tr><th>Автор</th><th>Название</th><th>Стр.</th><th>Год</th><th>Жанр</th><th>Действия</th></tr></thead>
+      <thead><tr><th>Автор</th><th>Название</th><th>Стр.</th><th>Год</th><th>Действия</th></tr></thead>
       <tbody id="booksBody">
         {% for b in books %}
         <tr data-id="{{ b.id }}">
@@ -32,6 +31,7 @@
           <td class="title">{{ b.title }}</td>
           <td class="pages">{{ b.pages }}</td>
           <td class="year">{{ b.year }}</td>
+          <td class="genre">{{ b.genre }}</td>
           <td>
             <button class="btn btn-sm btn-warning btn-edit">Редактировать</button>
             <button class="btn btn-sm btn-danger btn-delete">Удалить</button>
@@ -42,7 +42,6 @@
     </table>
 
   {% else %}
-    <!-- вывод из файла -->
     {% if not books %}
       <p>Нет записей.</p>
     {% else %}
@@ -56,7 +55,7 @@
     {% endif %}
   {% endif %}
 
-  <!-- Modal для редактирования (Bootstrap 5) -->
+  <!-- Modal -->
   <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -79,13 +78,10 @@
     </div>
   </div>
 
-<!-- Bootstrap JS + tiny JS for AJAX actions -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const csrftoken = '{{ csrf_token }}'; // если нужен
-function getCookie(name) {
-  // можно взять CSRF из cookie, но в шаблоне проще вставить token
-}
+const csrftoken = '{{ csrf_token }}';
+
 // AJAX поиск
 const searchInput = document.getElementById('searchInput');
 if (searchInput) {
@@ -103,6 +99,7 @@ if (searchInput) {
             <td class="title">${b.title}</td>
             <td class="pages">${b.pages}</td>
             <td class="year">${b.year}</td>
+            <td class="genre">${b.genre}</td>
             <td>
               <button class="btn btn-sm btn-warning btn-edit">Редактировать</button>
               <button class="btn btn-sm btn-danger btn-delete">Удалить</button>
@@ -113,7 +110,7 @@ if (searchInput) {
   });
 }
 
-// Делегирование событий: редактирование/удаление
+// Делегирование событий
 document.addEventListener('click', function(e) {
   if (e.target.matches('.btn-delete')) {
     const tr = e.target.closest('tr');
@@ -124,11 +121,8 @@ document.addEventListener('click', function(e) {
       headers: {'X-CSRFToken': csrftoken}
     }).then(r => r.json())
       .then(resp => {
-        if (resp.status === 'ok') {
-          tr.remove();
-        } else {
-          alert('Ошибка: ' + (resp.error || 'unknown'));
-        }
+        if (resp.status === 'ok') tr.remove();
+        else alert('Ошибка: ' + (resp.error || 'unknown'));
       });
   }
 
@@ -140,6 +134,7 @@ document.addEventListener('click', function(e) {
     document.getElementById('editTitle').value = tr.querySelector('.title').innerText;
     document.getElementById('editPages').value = tr.querySelector('.pages').innerText;
     document.getElementById('editYear').value = tr.querySelector('.year').innerText;
+    document.getElementById('editGenre').value = tr.querySelector('.genre').innerText;
     const modal = new bootstrap.Modal(document.getElementById('editModal'));
     modal.show();
   }
@@ -153,6 +148,7 @@ document.getElementById('editForm')?.addEventListener('submit', function(ev) {
     title: document.getElementById('editTitle').value,
     pages: document.getElementById('editPages').value,
     year: document.getElementById('editYear').value,
+    genre: document.getElementById('editGenre').value
   };
   fetch("{% url 'books:api_update_book' 0 %}".replace('/0/', '/' + id + '/'), {
     method: 'POST',
@@ -161,12 +157,12 @@ document.getElementById('editForm')?.addEventListener('submit', function(ev) {
   }).then(r => r.json())
     .then(resp => {
       if (resp.status === 'ok') {
-        // обновляем строку в таблице
         const tr = document.querySelector('tr[data-id="' + id + '"]');
         tr.querySelector('.author').innerText = payload.author;
         tr.querySelector('.title').innerText = payload.title;
         tr.querySelector('.pages').innerText = payload.pages;
         tr.querySelector('.year').innerText = payload.year;
+        tr.querySelector('.genre').innerText = payload.genre;
         bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
       } else {
         document.getElementById('editError').innerText = resp.error || 'Ошибка';
