@@ -17,4 +17,4 @@
     python manage.py runserver
 
 ## Откройте в браузере: 
-    http://127.0.0.1:8000/myapp4/add/
+    http://127.0.0.1:8000/myapp3/add/
