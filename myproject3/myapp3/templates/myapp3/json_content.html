@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Содержимое {{ filename }}</title></head>
+<body>
+<h1>Содержимое файла «{{ filename }}»</h1>
+<ul>
+  {% for item in items %}
+    <li>
+      {% for key, value in item.items %}
+        <strong>{{ key|capfirst }}:</strong> {{ value }}<br>
+      {% endfor %}
+    </li>
+  {% endfor %}
+</ul>
+<p><a href="{% url 'books:list_files' %}">Назад к списку</a></p>
+</body>
+</html>

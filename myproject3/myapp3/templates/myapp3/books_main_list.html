@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>books.json</title></head>
+<body>
+<h1>Содержимое «books.json»</h1>
+{% if not books %}
+  <p>Нет записей.</p>
+{% endif %}
+<ul>
+  {% for b in books %}
+    <li>
+      {% for key, value in b.items %}
+        <strong>{{ key|capfirst }}:</strong> {{ value }}<br>
+      {% endfor %}
+    </li>
+  {% endfor %}
+</ul>
+<p><a href="{% url 'books:book_form' %}">Добавить ещё</a></p>
+<p><a href="{% url 'books:list_files' %}">Список файлов</a></p>
+</body>
+</html>

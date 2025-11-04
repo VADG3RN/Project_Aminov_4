@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Список файлов</title></head>
+<body>
+<h1>Список загруженных JSON-файлов</h1>
+{% if no_files %}
+  <p>{{ no_files }}</p>
+{% endif %}
+<ul>
+  {% for f in files %}
+    <li>{{ f.filename }} — {{ f.size }} bytes
+      — <a href="{% url 'books:view_json' f.filename %}">Просмотреть</a>
+    </li>
+  {% endfor %}
+</ul>
+<p><a href="{% url 'books:upload_json' %}">Загрузить новый файл</a></p>
+<p><a href="{% url 'books:book_form' %}">Добавить книгу вручную</a></p>
+</body>
+</html>
