@@ -20,7 +20,7 @@
   {% if source == 'db' %}
     <!-- поиск и таблица с AJAX -->
     <div class="mb-3">
-      <input id="searchInput" placeholder="Поиск (author, title, genre)" class="form-control" />
+      <input id="searchInput" placeholder="Поиск (author, title)" class="form-control" />
     </div>
 
     <table class="table table-striped" id="booksTable">
@@ -32,7 +32,6 @@
           <td class="title">{{ b.title }}</td>
           <td class="pages">{{ b.pages }}</td>
           <td class="year">{{ b.year }}</td>
-          <td class="genre">{{ b.genre }}</td>
           <td>
             <button class="btn btn-sm btn-warning btn-edit">Редактировать</button>
             <button class="btn btn-sm btn-danger btn-delete">Удалить</button>
@@ -69,7 +68,6 @@
             <div class="mb-2"><label>Название</label><input id="editTitle" class="form-control" /></div>
             <div class="mb-2"><label>Страниц</label><input id="editPages" type="number" class="form-control" /></div>
             <div class="mb-2"><label>Год</label><input id="editYear" type="number" class="form-control" /></div>
-            <div class="mb-2"><label>Жанр</label><input id="editGenre" class="form-control" /></div>
             <div id="editError" class="text-danger"></div>
           </div>
           <div class="modal-footer">
@@ -105,7 +103,6 @@ if (searchInput) {
             <td class="title">${b.title}</td>
             <td class="pages">${b.pages}</td>
             <td class="year">${b.year}</td>
-            <td class="genre">${b.genre}</td>
             <td>
               <button class="btn btn-sm btn-warning btn-edit">Редактировать</button>
               <button class="btn btn-sm btn-danger btn-delete">Удалить</button>
@@ -143,7 +140,6 @@ document.addEventListener('click', function(e) {
     document.getElementById('editTitle').value = tr.querySelector('.title').innerText;
     document.getElementById('editPages').value = tr.querySelector('.pages').innerText;
     document.getElementById('editYear').value = tr.querySelector('.year').innerText;
-    document.getElementById('editGenre').value = tr.querySelector('.genre').innerText;
     const modal = new bootstrap.Modal(document.getElementById('editModal'));
     modal.show();
   }
@@ -157,7 +153,6 @@ document.getElementById('editForm')?.addEventListener('submit', function(ev) {
     title: document.getElementById('editTitle').value,
     pages: document.getElementById('editPages').value,
     year: document.getElementById('editYear').value,
-    genre: document.getElementById('editGenre').value
   };
   fetch("{% url 'books:api_update_book' 0 %}".replace('/0/', '/' + id + '/'), {
     method: 'POST',
@@ -172,7 +167,6 @@ document.getElementById('editForm')?.addEventListener('submit', function(ev) {
         tr.querySelector('.title').innerText = payload.title;
         tr.querySelector('.pages').innerText = payload.pages;
         tr.querySelector('.year').innerText = payload.year;
-        tr.querySelector('.genre').innerText = payload.genre;
         bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
       } else {
         document.getElementById('editError').innerText = resp.error || 'Ошибка';
