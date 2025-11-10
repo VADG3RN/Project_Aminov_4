@@ -1,87 +1,80 @@
-{% load static %}
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Книги</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="container py-4">
-  <h1>Список книг</h1>
+{% extends "myapp3/base.html" %}
+{% block title %}Список книг{% endblock %}
+{% block content %}
+<h1>Список книг</h1>
 
+<div class="mb-3">
+  <label class="form-label">Источник:</label>
+  <div class="btn-group ms-2" role="group">
+    <a class="btn btn-outline-primary {% if source == 'file' %}active{% endif %}" href="?source=file">Файлы JSON</a>
+    <a class="btn btn-outline-primary {% if source == 'db' %}active{% endif %}" href="?source=db">База данных (SQLite)</a>
+  </div>
+</div>
+
+{% if source == 'db' %}
   <div class="mb-3">
-    <label class="form-label">Источник:</label>
-    <div>
-      <a class="btn btn-outline-primary {% if source == 'file' %}active{% endif %}" href="?source=file">Файлы JSON</a>
-      <a class="btn btn-outline-primary {% if source == 'db' %}active{% endif %}" href="?source=db">База данных (SQLite)</a>
-    </div>
+    <input id="searchInput" placeholder="Поиск (author, title, genre)" class="form-control" />
   </div>
 
-  {% if source == 'db' %}
-    <div class="mb-3">
-      <input id="searchInput" placeholder="Поиск (author, title, genre)" class="form-control" />
-    </div>
+  <table class="table table-striped" id="booksTable">
+    <thead><tr><th>Автор</th><th>Название</th><th>Стр.</th><th>Год</th><th>Жанр</th><th>Действия</th></tr></thead>
+    <tbody id="booksBody">
+      {% for b in books %}
+      <tr data-id="{{ b.id }}">
+        <td class="author">{{ b.author }}</td>
+        <td class="title">{{ b.title }}</td>
+        <td class="pages">{{ b.pages }}</td>
+        <td class="year">{{ b.year }}</td>
+        <td class="genre">{{ b.genre }}</td>
+        <td>
+          <button class="btn btn-sm btn-warning btn-edit">Редактировать</button>
+          <button class="btn btn-sm btn-danger btn-delete">Удалить</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-    <table class="table table-striped" id="booksTable">
-      <thead><tr><th>Автор</th><th>Название</th><th>Стр.</th><th>Год</th><th>Действия</th></tr></thead>
-      <tbody id="booksBody">
-        {% for b in books %}
-        <tr data-id="{{ b.id }}">
-          <td class="author">{{ b.author }}</td>
-          <td class="title">{{ b.title }}</td>
-          <td class="pages">{{ b.pages }}</td>
-          <td class="year">{{ b.year }}</td>
-          <td class="genre">{{ b.genre }}</td>
-          <td>
-            <button class="btn btn-sm btn-warning btn-edit">Редактировать</button>
-            <button class="btn btn-sm btn-danger btn-delete">Удалить</button>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
+{% else %}
+  {% if not books %}
+    <div class="alert alert-info">Нет записей.</div>
   {% else %}
-    {% if not books %}
-      <p>Нет записей.</p>
-    {% else %}
-      <ul class="list-group">
-        {% for b in books %}
-        <li class="list-group-item">
-          <strong>{{ b.author }}</strong> — {{ b.title }} ({{ b.year }}) — {{ b.pages }} стр.
-        </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
+    <ul class="list-group">
+      {% for b in books %}
+      <li class="list-group-item">
+        <strong>{{ b.author }}</strong> — {{ b.title }} ({{ b.year }}) — {{ b.pages }} стр. {% if b.genre %}— {{ b.genre }}{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
   {% endif %}
+{% endif %}
 
-  <!-- Modal -->
-  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="editForm">
-          <div class="modal-header"><h5 class="modal-title">Редактировать книгу</h5></div>
-          <div class="modal-body">
-            <input type="hidden" id="editId" />
-            <div class="mb-2"><label>Автор</label><input id="editAuthor" class="form-control" /></div>
-            <div class="mb-2"><label>Название</label><input id="editTitle" class="form-control" /></div>
-            <div class="mb-2"><label>Страниц</label><input id="editPages" type="number" class="form-control" /></div>
-            <div class="mb-2"><label>Год</label><input id="editYear" type="number" class="form-control" /></div>
-            <div id="editError" class="text-danger"></div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-          </div>
-        </form>
-      </div>
+<!-- Modal для редактирования -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editForm">
+        <div class="modal-header"><h5 class="modal-title">Редактировать книгу</h5></div>
+        <div class="modal-body">
+          <input type="hidden" id="editId" />
+          <div class="mb-2"><label>Автор</label><input id="editAuthor" class="form-control" /></div>
+          <div class="mb-2"><label>Название</label><input id="editTitle" class="form-control" /></div>
+          <div class="mb-2"><label>Страниц</label><input id="editPages" type="number" class="form-control" /></div>
+          <div class="mb-2"><label>Год</label><input id="editYear" type="number" class="form-control" /></div>
+          <div class="mb-2"><label>Жанр</label><input id="editGenre" class="form-control" /></div>
+          <div id="editError" class="text-danger"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
     </div>
   </div>
+</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const csrftoken = '{{ csrf_token }}';
-
 // AJAX поиск
 const searchInput = document.getElementById('searchInput');
 if (searchInput) {
@@ -110,7 +103,7 @@ if (searchInput) {
   });
 }
 
-// Делегирование событий
+// Делегирование событий (удаление/редактирование)
 document.addEventListener('click', function(e) {
   if (e.target.matches('.btn-delete')) {
     const tr = e.target.closest('tr');
@@ -170,5 +163,4 @@ document.getElementById('editForm')?.addEventListener('submit', function(ev) {
     });
 });
 </script>
-</body>
-</html>
+{% endblock %}

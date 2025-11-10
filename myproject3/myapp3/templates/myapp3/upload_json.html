@@ -1,14 +1,12 @@
-<!doctype html>
-<html>
-<head><meta charset="utf-8"><title>Загрузка JSON</title></head>
-<body>
+{% extends "myapp3/base.html" %}
+{% block title %}Загрузить JSON{% endblock %}
+{% block content %}
 <h1>Загрузить JSON-файл</h1>
-{% if messages %}{% for m in messages %}<p>{{ m }}</p>{% endfor %}{% endif %}
-<form method="post" enctype="multipart/form-data">
+{% if messages %}{% for m in messages %}<div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+<form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Загрузить</button>
+  <button class="btn btn-primary" type="submit">Загрузить</button>
+  <a href="{% url 'books:list_files' %}" class="btn btn-link">Список файлов</a>
 </form>
-<p><a href="{% url 'books:list_files' %}">Список файлов</a></p>
-</body>
-</html>
+{% endblock %}
