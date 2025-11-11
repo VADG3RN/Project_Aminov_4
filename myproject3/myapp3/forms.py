@@ -5,8 +5,8 @@ class BookForm(forms.Form):
     author = forms.CharField(label='Автор', max_length=200)
     title = forms.CharField(label='Название', max_length=300)
     genre = forms.CharField(label='Жанр', max_length=100, required=False)
-    pages = forms.IntegerField(label='Количество страниц', min_value=0, required=False)
-    year = forms.IntegerField(label='Год издания', min_value=0, required=False)
+    pages = forms.IntegerField(label='Количество страниц', min_value=1, required=False)
+    year = forms.IntegerField(label='Год издания', min_value=1, required=False)
     save_to = forms.ChoiceField(
         label='Куда сохранить',
         choices=(('file', 'Файл (JSON)'), ('db', 'База данных (SQLite)')),
